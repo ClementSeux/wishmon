@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b63acdddb07fc42e7ba5c24236c51fd4, type: 3}
+  m_Name: Rocaca
+  m_EditorClassIdentifier: Assembly-CSharp::WishemonCard
+  _name: Rocaca
+  _prefab: {fileID: 3632437718653865927, guid: b0f145f11354a1444a678a7de9d1d0a6, type: 3}
+  _pv: 10
+  _attack: 5
+  _defense: 2
