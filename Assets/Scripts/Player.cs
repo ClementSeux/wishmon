@@ -1,5 +1,6 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 public class Player : MonoBehaviour
 {
@@ -9,33 +10,23 @@ public class Player : MonoBehaviour
     [SerializeField] private InputActionReference _interactRef = null;
     [SerializeField] private float _speed = 3f;
     [SerializeField] private Transform _rayStartPoint = null;
-    [SerializeField] private float _rayDistance = 1f;
+    [SerializeField] private float _rayDistance = 1.2f;
 
-    [SerializeField] private Wishemon _wishemonPrefab = null;
-    [SerializeField] private WishemonCard _starter = null;
-
-    public WishemonCard Starter => _starter;
-
-    [Header("Wishemon qui suit le joueur")]
-    [SerializeField] private Vector3 _wishemonOffset = new Vector3(0f, 0f, -2.5f);
-    [SerializeField, Range(0.05f, 1f)] private float _wishemonScale = 0.25f;
+    private bool _locked = false;
 
     private void Start()
     {
-        Wishemon w = Instantiate(_wishemonPrefab, transform);
-        w.transform.localPosition = _wishemonOffset;
-        w.transform.localScale = Vector3.one * _wishemonScale;
-        w.Initialize(_starter);
+        if (PlayerTeam.Instance != null && !PlayerTeam.Instance.HasStarter)
+            SceneManager.LoadScene("StarterSelection");
     }
 
     private void Update()
     {
-        if (Time.timeScale == 0f)
+        if (Time.timeScale == 0f || _locked)
         {
-            _animator.SetBool("Walking", false);
+            if (_animator != null) _animator.SetBool("Walking", false);
             return;
         }
-
         UpdateMovement();
         UpdateInteraction();
     }
@@ -43,20 +34,15 @@ public class Player : MonoBehaviour
     private void UpdateMovement()
     {
         Vector2 move = _moveRef.action.ReadValue<Vector2>();
-        bool isWalking = move.magnitude >= 0.1f;
+        bool walking = move.magnitude >= 0.1f;
 
-        _animator.SetBool("Walking", isWalking);
+        if (_animator != null) _animator.SetBool("Walking", walking);
+        if (!walking) return;
 
-        if (!isWalking) return;
-
-        if (move.y >= 0.1f)
-            transform.rotation = Quaternion.Euler(0f, 0f, 0f);
-        else if (move.x >= 0.1f)
-            transform.rotation = Quaternion.Euler(0f, 90f, 0f);
-        else if (move.y <= -0.1f)
-            transform.rotation = Quaternion.Euler(0f, 180f, 0f);
-        else if (move.x <= -0.1f)
-            transform.rotation = Quaternion.Euler(0f, 270f, 0f);
+        if (move.y >= 0.1f)       transform.rotation = Quaternion.Euler(0f, 0f, 0f);
+        else if (move.x >= 0.1f)  transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+        else if (move.y <= -0.1f) transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+        else if (move.x <= -0.1f) transform.rotation = Quaternion.Euler(0f, 270f, 0f);
 
         _controller.SimpleMove(transform.forward * _speed);
     }
@@ -65,8 +51,30 @@ public class Player : MonoBehaviour
     {
         if (!_interactRef.action.WasPerformedThisFrame()) return;
 
+        // Fermer dialogue ouvert
+        if (DialogueManager.Instance != null && DialogueManager.Instance.IsOpen)
+        {
+            DialogueManager.Instance.HideDialogue();
+            return;
+        }
+
+        if (_rayStartPoint == null) return;
         Ray ray = new Ray(_rayStartPoint.position, _rayStartPoint.forward);
-        if (Physics.Raycast(ray, _rayDistance))
-            Debug.Log("Touche !");
+        if (!Physics.Raycast(ray, out RaycastHit hit, _rayDistance)) return;
+
+        PNJ pnj = hit.collider.GetComponent<PNJ>();
+        if (pnj == null) return;
+
+        if (pnj.IsTrainer && !pnj.IsDefeated && pnj.TrainerWishemon != null)
+        {
+            pnj.SetDefeated();
+            FightManager.Instance.StartTrainerFight(pnj.TrainerName, pnj.TrainerWishemon);
+        }
+        else
+        {
+            DialogueManager.Instance?.ShowDialogue(pnj.dialogue);
+        }
     }
+
+    public void SetLocked(bool locked) => _locked = locked;
 }
