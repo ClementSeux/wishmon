@@ -253,23 +253,22 @@ public static class WishmonSceneCreator
             // RawImage pour la RenderTexture du modele 3D
             var rawGO = new GameObject("ModelView");
             rawGO.transform.SetParent(card.transform, false);
-            var rawRT = rawGO.AddComponent<RectTransform>();
-            rawRT.sizeDelta = new Vector2(220, 220);
+            rawGO.AddComponent<RectTransform>();
             var le = rawGO.AddComponent<LayoutElement>();
-            le.preferredHeight = 220; le.preferredWidth = 220; le.flexibleWidth = 0;
+            le.preferredHeight = 240; le.flexibleWidth = 1;
             rawImages[i] = rawGO.AddComponent<RawImage>();
-            rawImages[i].color = bgColors[i]; // couleur de fond en attendant
+            rawImages[i].color = bgColors[i];
 
-            var nameGO = CreateTMP(card.transform, $"Name{i}", $"Starter {i + 1}", 36);
+            var nameGO = CreateTMP(card.transform, $"Name{i}", $"Starter {i + 1}", 34);
             var nameTMP = nameGO.GetComponent<TextMeshProUGUI>();
             nameTMP.fontStyle = FontStyles.Bold;
             names[i] = nameTMP;
             var namLE = nameGO.AddComponent<LayoutElement>();
-            namLE.preferredHeight = 50;
+            namLE.preferredHeight = 50; namLE.flexibleWidth = 1;
 
-            var btnGO = CreateButton(card.transform, $"Btn{i}", "Choisir !", 32, () => { });
+            var btnGO = CreateButton(card.transform, $"Btn{i}", "Choisir !", 28, () => { });
             var btnLE = btnGO.AddComponent<LayoutElement>();
-            btnLE.preferredHeight = 75; btnLE.minHeight = 75;
+            btnLE.preferredHeight = 75; btnLE.minHeight = 65; btnLE.flexibleWidth = 1;
             buttons[i] = btnGO.GetComponent<Button>();
         }
 
