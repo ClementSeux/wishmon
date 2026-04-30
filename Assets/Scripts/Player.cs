@@ -16,8 +16,19 @@ public class Player : MonoBehaviour
 
     private void Start()
     {
-        if (PlayerTeam.Instance != null && !PlayerTeam.Instance.HasStarter)
-            SceneManager.LoadScene("StarterSelection");
+        var pt = PlayerTeam.Instance;
+        if (pt == null) return;
+
+        if (!pt.HasStarter)
+        {
+            int idx = SceneUtility.GetBuildIndexByScenePath("Assets/Scenes/StarterSelection.unity");
+            if (idx >= 0)
+                SceneManager.LoadScene("StarterSelection");
+            else if (pt.StarterChoices.Length > 0 && pt.StarterChoices[0] != null)
+                pt.ChooseStarter(0);
+        }
+
+        AudioManager.Instance?.PlayWorldMusic();
     }
 
     private void Update()
@@ -51,7 +62,6 @@ public class Player : MonoBehaviour
     {
         if (!_interactRef.action.WasPerformedThisFrame()) return;
 
-        // Fermer dialogue ouvert
         if (DialogueManager.Instance != null && DialogueManager.Instance.IsOpen)
         {
             DialogueManager.Instance.HideDialogue();
