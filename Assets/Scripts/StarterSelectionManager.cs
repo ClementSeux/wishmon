@@ -14,17 +14,27 @@ public class StarterSelectionManager : MonoBehaviour
     private void Start()
     {
         var team = PlayerTeam.Instance;
-        if (team == null) return;
+        if (team == null)
+        {
+            Debug.LogError("[StarterSelection] PlayerTeam.Instance est null ! Lance le jeu depuis la scène World.");
+            return;
+        }
+
+        Debug.Log($"[StarterSelection] StarterChoices : {team.StarterChoices.Length} entrées");
 
         for (int i = 0; i < _buttons.Length; i++)
         {
             int idx = i;
             var card = i < team.StarterChoices.Length ? team.StarterChoices[i] : null;
 
+            Debug.Log($"[StarterSelection] Starter {i} : {(card == null ? "NULL" : card.Name)} | Model : {(_models != null && i < _models.Length && _models[i] != null ? "OK" : "NULL")}");
+
             if (card == null) { _buttons[i].gameObject.SetActive(false); continue; }
 
             if (i < _models.Length && _models[i] != null)
                 _models[i].Init(card);
+            else
+                Debug.LogWarning($"[StarterSelection] _models[{i}] non assigné !");
 
             _names[i].text = card.Name;
             _buttons[i].onClick.AddListener(() => Choose(idx));
