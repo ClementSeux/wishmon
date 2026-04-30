@@ -43,6 +43,9 @@ public static class SaveSystem
         var pt = PlayerTeam.Instance;
         if (pt == null) return;
 
+        // Si l'équipe est déjà chargée (retour de combat), ne pas la réinitialiser
+        if (pt.Team.Count > 0) return;
+
         pt.Team.Clear();
         int count = PlayerPrefs.GetInt("team_count", 0);
         for (int i = 0; i < count; i++)
