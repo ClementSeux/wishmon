@@ -1,7 +1,5 @@
 using UnityEngine;
 
-// Ajoute ce composant + un Collider Trigger autour du PNJ.
-// Quand le joueur s'approche : dialogue ou combat automatique.
 [RequireComponent(typeof(Collider))]
 public class PNJTrigger : MonoBehaviour
 {
@@ -12,16 +10,33 @@ public class PNJTrigger : MonoBehaviour
         GetComponent<Collider>().isTrigger = true;
         if (_pnj == null)
             _pnj = GetComponentInParent<PNJ>();
+
+        if (_pnj == null)
+            Debug.LogError($"[PNJTrigger] Pas de composant PNJ trouvé sur {transform.parent?.name}", this);
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!other.TryGetComponent<Player>(out _)) return;
-        if (_pnj == null) return;
+        Debug.Log($"[PNJTrigger] OnTriggerEnter avec {other.gameObject.name}");
+
+        // Cherche Player sur le GO lui-même OU sur sa racine
+        Player player = other.GetComponent<Player>() ?? other.GetComponentInParent<Player>();
+        if (player == null)
+        {
+            Debug.Log($"[PNJTrigger] Pas de composant Player sur {other.gameObject.name}");
+            return;
+        }
+
+        if (_pnj == null)
+        {
+            Debug.LogError("[PNJTrigger] _pnj est null !");
+            return;
+        }
+
+        Debug.Log($"[PNJTrigger] PNJ={_pnj.name} IsTrainer={_pnj.IsTrainer} IsDefeated={_pnj.IsDefeated} Wishemon={_pnj.TrainerWishemon}");
 
         if (_pnj.IsTrainer && !_pnj.IsDefeated && _pnj.TrainerWishemon != null)
         {
-            // Regarder le joueur avant le combat
             Vector3 dir = other.transform.position - _pnj.transform.position;
             dir.y = 0;
             if (dir != Vector3.zero)
@@ -33,6 +48,10 @@ public class PNJTrigger : MonoBehaviour
         else if (!_pnj.IsTrainer)
         {
             DialogueManager.Instance?.ShowDialogue(_pnj.dialogue);
+        }
+        else
+        {
+            Debug.LogWarning($"[PNJTrigger] Combat non déclenché : IsTrainer={_pnj.IsTrainer} IsDefeated={_pnj.IsDefeated} Wishemon={_pnj.TrainerWishemon}");
         }
     }
 }
