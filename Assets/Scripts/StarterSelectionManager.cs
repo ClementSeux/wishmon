@@ -9,7 +9,7 @@ public class StarterSelectionManager : MonoBehaviour
     [SerializeField] private Image[] _sprites = new Image[3];       // gardé pour compatibilité
     [SerializeField] private TextMeshProUGUI[] _names = new TextMeshProUGUI[3];
     [SerializeField] private TextMeshProUGUI _infoText;
-    [SerializeField] private WishemonModelViewer[] _viewers = new WishemonModelViewer[3];
+    [SerializeField] private WishemonCombatModel[] _models = new WishemonCombatModel[3];
 
     private void Start()
     {
@@ -23,11 +23,8 @@ public class StarterSelectionManager : MonoBehaviour
 
             if (card == null) { _buttons[i].gameObject.SetActive(false); continue; }
 
-            // Modèle 3D via RenderTexture
-            if (i < _viewers.Length && _viewers[i] != null)
-                _viewers[i].Init(card);
-            else if (i < _sprites.Length && _sprites[i] != null && card.Sprite != null)
-                _sprites[i].sprite = card.Sprite;
+            if (i < _models.Length && _models[i] != null)
+                _models[i].Init(card);
 
             _names[i].text = card.Name;
             _buttons[i].onClick.AddListener(() => Choose(idx));

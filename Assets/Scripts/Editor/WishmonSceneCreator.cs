@@ -175,20 +175,40 @@ public static class WishmonSceneCreator
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         scene.name = "StarterSelection";
 
-        // Camera principale (voit la scene UI, PAS les modeles 3D)
+        // Camera - vue large pour voir les 3 modeles
         var camGO = new GameObject("Main Camera");
         var cam = camGO.AddComponent<Camera>();
         cam.clearFlags = CameraClearFlags.SolidColor;
-        cam.backgroundColor = new Color(0.07f, 0.07f, 0.18f);
-        cam.transform.position = new Vector3(0, 0, -10);
-        cam.cullingMask = ~0; // tout voir sauf les modeles (on separera par position)
+        cam.backgroundColor = new Color(0.53f, 0.81f, 0.98f);
+        cam.transform.position = new Vector3(0, 2.5f, -7f);
+        cam.transform.rotation = Quaternion.Euler(15, 0, 0);
+        cam.fieldOfView = 55f;
         camGO.AddComponent<AudioListener>();
+
+        // Sol
+        var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
+        ground.name = "Ground";
+        ground.transform.localScale = new Vector3(2, 1, 2);
+        var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+        mat.color = new Color(0.35f, 0.55f, 0.25f);
+        ground.GetComponent<Renderer>().material = mat;
+
+        // 3 modeles 3D directement dans la scene
+        float[] xPos = new float[] { -3f, 0f, 3f };
+        var models = new WishemonCombatModel[3];
+        for (int i = 0; i < 3; i++)
+        {
+            var anchor = new GameObject($"StarterModel{i}");
+            anchor.transform.position = new Vector3(xPos[i], 0, 0);
+            anchor.transform.rotation = Quaternion.Euler(0, 180, 0); // face camera
+            models[i] = anchor.AddComponent<WishemonCombatModel>();
+        }
 
         var evGO = new GameObject("EventSystem");
         evGO.AddComponent<EventSystem>();
         evGO.AddComponent<InputSystemUIInputModule>();
 
-        // Canvas
+        // Canvas overlay
         var canvasGO = new GameObject("Canvas");
         var canvas = canvasGO.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -197,129 +217,49 @@ public static class WishmonSceneCreator
         scaler.referenceResolution = new Vector2(1920, 1080);
         canvasGO.AddComponent<GraphicRaycaster>();
 
-        // Fond
-        var bg = canvasGO.AddComponent<Image>();
-        bg.color = new Color(0.07f, 0.07f, 0.18f);
+        // Bandeau semi-transparent en haut
+        var topBand = CreatePanel(canvasGO.transform, "TopBand", new Color(0, 0, 0, 0.65f));
+        SetRect(topBand, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -160), new Vector2(0, 0));
 
-        // Titre
-        var title = CreateTMP(canvasGO.transform, "Title", "Choisis ton Wishemon !", 60);
-        SetRect(title, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -130), new Vector2(0, -10));
+        var title = CreateTMP(topBand.transform, "Title", "Choisis ton Wishemon !", 58);
+        SetRect(title, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -100), new Vector2(0, -5));
 
-        // Sous-titre
-        var info = CreateTMP(canvasGO.transform, "Info", "Clique sur un wishemon pour commencer l'aventure", 30);
-        SetRect(info, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -210), new Vector2(0, -140));
+        var subtitle = CreateTMP(topBand.transform, "Subtitle", "Passe la souris pour voir les stats", 28);
+        SetRect(subtitle, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 5), new Vector2(0, 48));
 
-        // Conteneur 3 starters
-        var container = new GameObject("StarterContainer");
-        container.transform.SetParent(canvasGO.transform, false);
-        var containerRT = container.AddComponent<RectTransform>();
-        containerRT.anchorMin = new Vector2(0.05f, 0.15f);
-        containerRT.anchorMax = new Vector2(0.95f, 0.85f);
-        containerRT.offsetMin = containerRT.offsetMax = Vector2.zero;
-        var layout = container.AddComponent<HorizontalLayoutGroup>();
-        layout.spacing = 40; layout.childAlignment = TextAnchor.MiddleCenter;
-        layout.childForceExpandWidth = true; layout.childForceExpandHeight = true;
-        layout.padding = new RectOffset(20, 20, 0, 0);
+        // Bandeau bas : noms + boutons
+        var botBand = CreatePanel(canvasGO.transform, "BottomBand", new Color(0, 0, 0, 0.7f));
+        SetRect(botBand, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 0), new Vector2(0, 200));
+        var botLayout = botBand.AddComponent<HorizontalLayoutGroup>();
+        botLayout.childForceExpandWidth = true; botLayout.childForceExpandHeight = true;
+        botLayout.padding = new RectOffset(20, 20, 15, 15); botLayout.spacing = 10;
 
         var buttons = new Button[3];
-        var rawImages = new RawImage[3];
         var names = new TextMeshProUGUI[3];
-
-        Color[] cardColors = new Color[]
-        {
-            new Color(0.1f, 0.15f, 0.35f),
-            new Color(0.1f, 0.25f, 0.15f),
-            new Color(0.3f, 0.12f, 0.12f),
-        };
-        Color[] bgColors = new Color[]
-        {
-            new Color(0.12f, 0.16f, 0.36f),
-            new Color(0.12f, 0.26f, 0.16f),
-            new Color(0.32f, 0.14f, 0.14f),
-        };
 
         for (int i = 0; i < 3; i++)
         {
-            var card = CreatePanel(container.transform, $"Starter{i}", cardColors[i]);
-            var outline = card.AddComponent<Outline>();
-            outline.effectColor = new Color(0.4f, 0.6f, 1f);
-            outline.effectDistance = new Vector2(3, 3);
-            card.AddComponent<LayoutElement>();
-            var vl = card.AddComponent<VerticalLayoutGroup>();
+            var col = new GameObject($"Col{i}");
+            col.transform.SetParent(botBand.transform, false);
+            col.AddComponent<RectTransform>();
+            col.AddComponent<LayoutElement>();
+            var vl = col.AddComponent<VerticalLayoutGroup>();
             vl.childAlignment = TextAnchor.MiddleCenter;
-            vl.spacing = 20; vl.padding = new RectOffset(20, 20, 30, 30);
-            vl.childForceExpandWidth = true; vl.childForceExpandHeight = false;
+            vl.spacing = 10; vl.childForceExpandWidth = true; vl.childForceExpandHeight = true;
 
-            // RawImage pour la RenderTexture du modele 3D
-            var rawGO = new GameObject("ModelView");
-            rawGO.transform.SetParent(card.transform, false);
-            rawGO.AddComponent<RectTransform>();
-            var le = rawGO.AddComponent<LayoutElement>();
-            le.preferredHeight = 240; le.flexibleWidth = 1;
-            rawImages[i] = rawGO.AddComponent<RawImage>();
-            rawImages[i].color = bgColors[i];
+            var nameGO = CreateTMP(col.transform, $"Name{i}", $"Starter {i + 1}", 38);
+            names[i] = nameGO.GetComponent<TextMeshProUGUI>();
+            names[i].fontStyle = FontStyles.Bold;
 
-            var nameGO = CreateTMP(card.transform, $"Name{i}", $"Starter {i + 1}", 34);
-            var nameTMP = nameGO.GetComponent<TextMeshProUGUI>();
-            nameTMP.fontStyle = FontStyles.Bold;
-            names[i] = nameTMP;
-            var namLE = nameGO.AddComponent<LayoutElement>();
-            namLE.preferredHeight = 50; namLE.flexibleWidth = 1;
-
-            var btnGO = CreateButton(card.transform, $"Btn{i}", "Choisir !", 28, () => { });
-            var btnLE = btnGO.AddComponent<LayoutElement>();
-            btnLE.preferredHeight = 75; btnLE.minHeight = 65; btnLE.flexibleWidth = 1;
+            var btnGO = CreateButton(col.transform, $"Btn{i}", "Choisir !", 30, () => { });
             buttons[i] = btnGO.GetComponent<Button>();
         }
 
-        // Info panel en bas
-        var infoPanel = CreatePanel(canvasGO.transform, "InfoPanel", new Color(0, 0, 0, 0.5f));
-        SetRect(infoPanel, new Vector2(0.1f, 0), new Vector2(0.9f, 0), new Vector2(0, 10), new Vector2(0, 120));
+        // Info stats en bas
+        var infoPanel = CreatePanel(canvasGO.transform, "InfoPanel", new Color(0, 0, 0, 0.55f));
+        SetRect(infoPanel, new Vector2(0.05f, 0), new Vector2(0.95f, 0), new Vector2(0, 205), new Vector2(0, 305));
         var infoTxt = CreateTMP(infoPanel.transform, "InfoText", "", 28);
-        SetRectFull(infoTxt, 15, 10);
-
-        // --- Viewers 3D (cameras + modeles hors champ de la camera principale) ---
-        // Chaque viewer est positionné très loin en X pour isoler les cameras
-        var viewers = new WishemonModelViewer[3];
-        float[] xPositions = new float[] { -100f, 0f, 100f };
-
-        for (int i = 0; i < 3; i++)
-        {
-            var viewerGO = new GameObject($"ModelViewer{i}");
-            viewerGO.transform.position = new Vector3(xPositions[i], 0, 0);
-            var viewer = viewerGO.AddComponent<WishemonModelViewer>();
-
-            // Camera du viewer - rend uniquement sa zone locale
-            var viewCamGO = new GameObject("Camera");
-            viewCamGO.transform.SetParent(viewerGO.transform, false);
-            viewCamGO.transform.localPosition = new Vector3(0, 1.2f, -3f);
-            viewCamGO.transform.localRotation = Quaternion.Euler(10, 0, 0);
-            var viewCam = viewCamGO.AddComponent<Camera>();
-            viewCam.clearFlags = CameraClearFlags.SolidColor;
-            viewCam.backgroundColor = bgColors[i];
-            viewCam.fieldOfView = 35f;
-            viewCam.nearClipPlane = 0.1f;
-            viewCam.farClipPlane = 8f; // ne voit que 8 unités devant elle
-            viewCam.enabled = true;
-            // Désactiver l'audio listener sur ces cameras
-            var al = viewCamGO.GetComponent<AudioListener>();
-            if (al != null) Object.DestroyImmediate(al);
-
-            // Modele 3D
-            var modelGO = new GameObject("Model");
-            modelGO.transform.SetParent(viewerGO.transform, false);
-            modelGO.transform.localPosition = new Vector3(0, 0, 0);
-            var model = modelGO.AddComponent<WishemonCombatModel>();
-
-            // Wiring via SerializedObject
-            var vSO = new SerializedObject(viewer);
-            vSO.FindProperty("_cam").objectReferenceValue = viewCam;
-            vSO.FindProperty("_model").objectReferenceValue = model;
-            vSO.FindProperty("_rawImage").objectReferenceValue = rawImages[i];
-            vSO.ApplyModifiedProperties();
-
-            viewers[i] = viewer;
-        }
+        SetRectFull(infoTxt, 20, 8);
 
         // Manager
         var mgrGO = new GameObject("StarterSelectionManager");
@@ -327,11 +267,11 @@ public static class WishmonSceneCreator
         mgrGO.AddComponent<PlayerTeamBootstrap>();
 
         var so = new SerializedObject(mgr);
+
         var btnsProp = so.FindProperty("_buttons");
         btnsProp.arraySize = 3;
         for (int i = 0; i < 3; i++) btnsProp.GetArrayElementAtIndex(i).objectReferenceValue = buttons[i];
 
-        // _sprites laissé vide (on utilise les viewers)
         var sprProp = so.FindProperty("_sprites");
         sprProp.arraySize = 3;
 
@@ -341,9 +281,9 @@ public static class WishmonSceneCreator
 
         so.FindProperty("_infoText").objectReferenceValue = infoTxt.GetComponent<TextMeshProUGUI>();
 
-        var viewersProp = so.FindProperty("_viewers");
-        viewersProp.arraySize = 3;
-        for (int i = 0; i < 3; i++) viewersProp.GetArrayElementAtIndex(i).objectReferenceValue = viewers[i];
+        var modelsProp = so.FindProperty("_models");
+        modelsProp.arraySize = 3;
+        for (int i = 0; i < 3; i++) modelsProp.GetArrayElementAtIndex(i).objectReferenceValue = models[i];
 
         so.ApplyModifiedProperties();
 
