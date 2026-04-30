@@ -445,6 +445,8 @@ public static class WishmonSceneCreator
         tmp.text = label; tmp.fontSize = size;
         tmp.alignment = TextAlignmentOptions.Center; tmp.color = Color.white;
         tmp.fontStyle = FontStyles.Bold;
+        tmp.enableWordWrapping = false;
+        tmp.overflowMode = TextOverflowModes.Ellipsis;
 
         return go;
     }
@@ -479,15 +481,4 @@ public static class WishmonSceneCreator
     }
 }
 
-// Helper pour s'assurer que PlayerTeam existe dans StarterSelection
-public class PlayerTeamBootstrap : MonoBehaviour
-{
-    [SerializeField] private GameObject _playerTeamPrefab;
-
-    private void Awake()
-    {
-        if (PlayerTeam.Instance == null && _playerTeamPrefab != null)
-            Instantiate(_playerTeamPrefab);
-    }
-}
 #endif
