@@ -230,7 +230,7 @@ public static class WishmonSceneCreator
 
         // Bandeau bas : noms + boutons
         var botBand = CreatePanel(canvasGO.transform, "BottomBand", new Color(0, 0, 0, 0.7f));
-        SetRect(botBand, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 0), new Vector2(0, 200));
+        SetRect(botBand, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 0), new Vector2(0, 260));
         var botLayout = botBand.AddComponent<HorizontalLayoutGroup>();
         botLayout.childForceExpandWidth = true; botLayout.childForceExpandHeight = true;
         botLayout.padding = new RectOffset(10, 10, 12, 12); botLayout.spacing = 5;
@@ -258,7 +258,7 @@ public static class WishmonSceneCreator
 
         // Info stats en bas
         var infoPanel = CreatePanel(canvasGO.transform, "InfoPanel", new Color(0, 0, 0, 0.55f));
-        SetRect(infoPanel, new Vector2(0.05f, 0), new Vector2(0.95f, 0), new Vector2(0, 205), new Vector2(0, 305));
+        SetRect(infoPanel, new Vector2(0.05f, 0), new Vector2(0.95f, 0), new Vector2(0, 265), new Vector2(0, 365));
         var infoTxt = CreateTMP(infoPanel.transform, "InfoText", "", 28);
         SetRectFull(infoTxt, 20, 8);
 
@@ -387,7 +387,7 @@ public static class WishmonSceneCreator
         tmp.alignment = TextAlignmentOptions.Center; tmp.color = Color.white;
         tmp.fontStyle = FontStyles.Bold;
         tmp.enableWordWrapping = false;
-        tmp.overflowMode = TextOverflowModes.Ellipsis;
+        tmp.overflowMode = TextOverflowModes.Overflow;
 
         return go;
     }
