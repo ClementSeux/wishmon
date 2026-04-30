@@ -85,4 +85,6 @@ public class PlayerTeam : MonoBehaviour
     }
 
     public void SetItem(string item, int count) => _inventory[item] = count;
+
+    public void SetStarterChoices(WishemonCard[] choices) => _starterChoices = choices;
 }
