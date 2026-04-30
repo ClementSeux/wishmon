@@ -40,7 +40,10 @@ public class StarterSelectionManager : MonoBehaviour
     private void ShowInfo(WishemonCard card)
     {
         if (_infoText == null || card == null) return;
-        _infoText.text = $"{card.Name}  |  Type : {card.Type}  |  PV : {card.MaxPv}  |  ATK : {card.Attack}";
+        string atks = card.Attacks != null && card.Attacks.Length > 0
+            ? string.Join("  /  ", System.Array.ConvertAll(card.Attacks, a => a.Name))
+            : "—";
+        _infoText.text = $"{card.Name}   •   Type : {card.Type}   •   PV : {card.MaxPv}   •   ATK : {card.Attack}   •   Attaques : {atks}";
     }
 
     private void Choose(int idx)

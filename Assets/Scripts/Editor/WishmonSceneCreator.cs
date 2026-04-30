@@ -228,39 +228,59 @@ public static class WishmonSceneCreator
         var subtitle = CreateTMP(topBand.transform, "Subtitle", "Passe la souris pour voir les stats", 28);
         SetRect(subtitle, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 5), new Vector2(0, 48));
 
-        // Bandeau bas : noms + boutons
-        var botBand = CreatePanel(canvasGO.transform, "BottomBand", new Color(0, 0, 0, 0.7f));
-        SetRect(botBand, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 0), new Vector2(0, 260));
+        // Info stats (juste au dessus des cartes)
+        var infoPanel = CreatePanel(canvasGO.transform, "InfoPanel", new Color(0, 0, 0, 0.6f));
+        SetRect(infoPanel, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 290), new Vector2(0, 370));
+        var infoTxt = CreateTMP(infoPanel.transform, "InfoText", "Passe la souris sur un wishemon pour voir ses stats", 26);
+        SetRectFull(infoTxt, 30, 8);
+
+        // Bandeau bas : 3 cartes avec nom + bouton
+        var botBand = new GameObject("BottomBand");
+        botBand.transform.SetParent(canvasGO.transform, false);
+        botBand.AddComponent<RectTransform>();
+        SetRect(botBand, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 0), new Vector2(0, 290));
         var botLayout = botBand.AddComponent<HorizontalLayoutGroup>();
         botLayout.childForceExpandWidth = true; botLayout.childForceExpandHeight = true;
-        botLayout.padding = new RectOffset(30, 30, 12, 12); botLayout.spacing = 10;
+        botLayout.padding = new RectOffset(20, 20, 12, 12); botLayout.spacing = 15;
+
+        Color[] botColors = new Color[]
+        {
+            new Color(0.12f, 0.18f, 0.40f, 0.95f),
+            new Color(0.12f, 0.30f, 0.18f, 0.95f),
+            new Color(0.35f, 0.15f, 0.12f, 0.95f),
+        };
 
         var buttons = new Button[3];
         var names = new TextMeshProUGUI[3];
 
         for (int i = 0; i < 3; i++)
         {
-            var col = new GameObject($"Col{i}");
-            col.transform.SetParent(botBand.transform, false);
-            col.AddComponent<RectTransform>();
-            col.AddComponent<LayoutElement>();
-            var vl = col.AddComponent<VerticalLayoutGroup>();
+            var card = CreatePanel(botBand.transform, $"Card{i}", botColors[i]);
+            card.AddComponent<LayoutElement>();
+            var outline = card.AddComponent<Outline>();
+            outline.effectColor = new Color(0.5f, 0.7f, 1f, 0.8f);
+            outline.effectDistance = new Vector2(2, 2);
+            var vl = card.AddComponent<VerticalLayoutGroup>();
             vl.childAlignment = TextAnchor.MiddleCenter;
-            vl.spacing = 10; vl.childForceExpandWidth = true; vl.childForceExpandHeight = true;
+            vl.spacing = 8; vl.padding = new RectOffset(15, 15, 15, 15);
+            vl.childForceExpandWidth = true; vl.childForceExpandHeight = true;
 
-            var nameGO = CreateTMP(col.transform, $"Name{i}", $"Starter {i + 1}", 38);
+            var nameGO = CreateTMP(card.transform, $"Name{i}", $"Starter {i + 1}", 40);
             names[i] = nameGO.GetComponent<TextMeshProUGUI>();
             names[i].fontStyle = FontStyles.Bold;
+            var namLE = nameGO.AddComponent<LayoutElement>();
+            namLE.preferredHeight = 55; namLE.flexibleHeight = 0;
 
-            var btnGO = CreateButton(col.transform, $"Btn{i}", "Choisir !", 30, () => { });
+            var btnGO = CreateButton(card.transform, $"Btn{i}", "Choisir !", 32, () => { });
+            var btnColors = btnGO.GetComponent<Button>().colors;
+            btnColors.normalColor = new Color(0.2f, 0.5f, 0.9f);
+            btnColors.highlightedColor = new Color(0.3f, 0.65f, 1f);
+            btnGO.GetComponent<Button>().colors = btnColors;
+            btnGO.GetComponent<Image>().color = new Color(0.2f, 0.5f, 0.9f);
+            var btnLE = btnGO.AddComponent<LayoutElement>();
+            btnLE.preferredHeight = 65; btnLE.flexibleHeight = 0; btnLE.flexibleWidth = 1;
             buttons[i] = btnGO.GetComponent<Button>();
         }
-
-        // Info stats en bas
-        var infoPanel = CreatePanel(canvasGO.transform, "InfoPanel", new Color(0, 0, 0, 0.55f));
-        SetRect(infoPanel, new Vector2(0.05f, 0), new Vector2(0.95f, 0), new Vector2(0, 265), new Vector2(0, 365));
-        var infoTxt = CreateTMP(infoPanel.transform, "InfoText", "", 28);
-        SetRectFull(infoTxt, 20, 8);
 
         // Manager
         var mgrGO = new GameObject("StarterSelectionManager");
