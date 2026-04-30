@@ -233,7 +233,7 @@ public static class WishmonSceneCreator
         SetRect(botBand, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 0), new Vector2(0, 260));
         var botLayout = botBand.AddComponent<HorizontalLayoutGroup>();
         botLayout.childForceExpandWidth = true; botLayout.childForceExpandHeight = true;
-        botLayout.padding = new RectOffset(10, 10, 12, 12); botLayout.spacing = 5;
+        botLayout.padding = new RectOffset(30, 30, 12, 12); botLayout.spacing = 10;
 
         var buttons = new Button[3];
         var names = new TextMeshProUGUI[3];
