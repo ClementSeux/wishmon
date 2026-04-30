@@ -200,7 +200,8 @@ public static class WishmonSceneCreator
         {
             var anchor = new GameObject($"StarterModel{i}");
             anchor.transform.position = new Vector3(xPos[i], 0, 0);
-            anchor.transform.rotation = Quaternion.Euler(0, 180, 0); // face camera
+            anchor.transform.rotation = Quaternion.Euler(0, 180, 0);
+            anchor.transform.localScale = Vector3.one * 1.5f; // scale uniforme
             models[i] = anchor.AddComponent<WishemonCombatModel>();
         }
 
@@ -232,7 +233,7 @@ public static class WishmonSceneCreator
         SetRect(botBand, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 0), new Vector2(0, 200));
         var botLayout = botBand.AddComponent<HorizontalLayoutGroup>();
         botLayout.childForceExpandWidth = true; botLayout.childForceExpandHeight = true;
-        botLayout.padding = new RectOffset(20, 20, 15, 15); botLayout.spacing = 10;
+        botLayout.padding = new RectOffset(10, 10, 12, 12); botLayout.spacing = 5;
 
         var buttons = new Button[3];
         var names = new TextMeshProUGUI[3];
