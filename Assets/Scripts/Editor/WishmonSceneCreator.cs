@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 
 public static class WishmonSceneCreator
 {
@@ -17,111 +18,117 @@ public static class WishmonSceneCreator
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         scene.name = "Combat";
 
-        // Caméra
+        // Camera - vue 3/4 style Pokemon
         var camGO = new GameObject("Main Camera");
         var cam = camGO.AddComponent<Camera>();
         cam.clearFlags = CameraClearFlags.SolidColor;
-        cam.backgroundColor = new Color(0.08f, 0.08f, 0.12f);
+        cam.backgroundColor = new Color(0.53f, 0.81f, 0.98f);
+        cam.transform.position = new Vector3(0, 4, -6);
+        cam.transform.rotation = Quaternion.Euler(20, 0, 0);
         camGO.AddComponent<AudioListener>();
+
+        // Sol de combat
+        var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
+        ground.name = "Ground";
+        ground.transform.position = Vector3.zero;
+        ground.transform.localScale = new Vector3(2, 1, 2);
+        var groundMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+        groundMat.color = new Color(0.4f, 0.6f, 0.3f);
+        ground.GetComponent<Renderer>().material = groundMat;
+
+        // Anchors 3D modeles
+        var enemyAnchorGO = new GameObject("EnemyModelAnchor");
+        enemyAnchorGO.transform.position = new Vector3(2.5f, 0, 2f);
+        enemyAnchorGO.transform.rotation = Quaternion.Euler(0, 200, 0);
+        var enemyModel = enemyAnchorGO.AddComponent<WishemonCombatModel>();
+
+        var playerAnchorGO = new GameObject("PlayerModelAnchor");
+        playerAnchorGO.transform.position = new Vector3(-2.5f, 0, -1f);
+        playerAnchorGO.transform.rotation = Quaternion.Euler(0, 20, 0);
+        var playerModel = playerAnchorGO.AddComponent<WishemonCombatModel>();
 
         // Canvas principal
         var canvasGO = new GameObject("CombatCanvas");
         var canvas = canvasGO.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvasGO.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        var scaler = canvasGO.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920, 1080);
         canvasGO.AddComponent<GraphicRaycaster>();
 
         // EventSystem
         var evGO = new GameObject("EventSystem");
         evGO.AddComponent<EventSystem>();
-        evGO.AddComponent<StandaloneInputModule>();
+        evGO.AddComponent<InputSystemUIInputModule>();
 
-        // --- Fond de combat (placeholder coloré) ---
-        var bg = CreatePanel(canvasGO.transform, "Background", new Color(0.15f, 0.25f, 0.15f));
-        SetRectFull(bg);
+        // --- Zone ennemi (haut droite) ---
+        var enemyZone = CreatePanel(canvasGO.transform, "EnemyZone", new Color(0f, 0f, 0f, 0.75f));
+        SetRect(enemyZone, new Vector2(0.52f, 0.60f), new Vector2(1f, 1f), new Vector2(0, 0), new Vector2(-20, -20));
 
-        // --- Zone ennemi (haut) ---
-        var enemyZone = CreatePanel(canvasGO.transform, "EnemyZone", Color.clear);
-        SetRect(enemyZone, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(-250, -60), new Vector2(250, 60));
-
-        var enemyNameTxt = CreateTMP(enemyZone.transform, "EnemyName", "Wishemon ennemi", 20, TextAlignmentOptions.Left);
-        SetRect(enemyNameTxt, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -30), new Vector2(200, 0));
-
-        var enemyHPLabel = CreateTMP(enemyZone.transform, "EnemyHPLabel", "PV", 14);
-        SetRect(enemyHPLabel, new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 5), new Vector2(30, 25));
+        var enemyNameTxt = CreateTMP(enemyZone.transform, "EnemyName", "Ennemi", 42, TextAlignmentOptions.Left);
+        SetRect(enemyNameTxt, new Vector2(0, 1), new Vector2(1, 1), new Vector2(20, -70), new Vector2(-20, -10));
 
         var enemyHPBar = CreateSlider(enemyZone.transform, "EnemyHPBar");
-        SetRect(enemyHPBar, new Vector2(0, 0), new Vector2(1, 0), new Vector2(35, 5), new Vector2(-5, 25));
+        SetRect(enemyHPBar, new Vector2(0, 0.5f), new Vector2(1, 0.5f), new Vector2(20, -20), new Vector2(-20, 20));
 
-        var enemyHPText = CreateTMP(enemyZone.transform, "EnemyHPText", "30/30", 13);
-        SetRect(enemyHPText, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-60, 5), new Vector2(0, 25));
+        var enemyHPText = CreateTMP(enemyZone.transform, "EnemyHPText", "30/30", 32, TextAlignmentOptions.Right);
+        SetRect(enemyHPText, new Vector2(0, 0), new Vector2(1, 0), new Vector2(20, 10), new Vector2(-20, 55));
 
-        var enemyImg = CreateImage(enemyZone.transform, "EnemySprite");
-        SetRect(enemyImg, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-50, -100), new Vector2(50, 0));
+        // --- Zone joueur (bas gauche) ---
+        var playerZone = CreatePanel(canvasGO.transform, "PlayerZone", new Color(0f, 0f, 0f, 0.75f));
+        SetRect(playerZone, new Vector2(0f, 0.55f), new Vector2(0.48f, 1f), new Vector2(20, 0), new Vector2(0, -20));
 
-        // --- Zone joueur (bas-gauche) ---
-        var playerZone = CreatePanel(canvasGO.transform, "PlayerZone", Color.clear);
-        SetRect(playerZone, new Vector2(0f, 0.35f), new Vector2(0f, 0.35f), new Vector2(20, -50), new Vector2(280, 50));
-
-        var playerNameTxt = CreateTMP(playerZone.transform, "PlayerName", "Mon Wishemon", 20, TextAlignmentOptions.Left);
-        SetRect(playerNameTxt, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -30), new Vector2(200, 0));
-
-        var playerHPLabel = CreateTMP(playerZone.transform, "PlayerHPLabel", "PV", 14);
-        SetRect(playerHPLabel, new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 5), new Vector2(30, 25));
+        var playerNameTxt = CreateTMP(playerZone.transform, "PlayerName", "Joueur", 42, TextAlignmentOptions.Left);
+        SetRect(playerNameTxt, new Vector2(0, 1), new Vector2(1, 1), new Vector2(20, -70), new Vector2(-20, -10));
 
         var playerHPBar = CreateSlider(playerZone.transform, "PlayerHPBar");
-        SetRect(playerHPBar, new Vector2(0, 0), new Vector2(1, 0), new Vector2(35, 5), new Vector2(-5, 25));
+        SetRect(playerHPBar, new Vector2(0, 0.5f), new Vector2(1, 0.5f), new Vector2(20, -20), new Vector2(-20, 20));
 
-        var playerHPText = CreateTMP(playerZone.transform, "PlayerHPText", "30/30", 13);
-        SetRect(playerHPText, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-60, 5), new Vector2(0, 25));
+        var playerHPText = CreateTMP(playerZone.transform, "PlayerHPText", "30/30", 32, TextAlignmentOptions.Right);
+        SetRect(playerHPText, new Vector2(0, 0), new Vector2(1, 0), new Vector2(20, 10), new Vector2(-20, 55));
 
-        var playerImg = CreateImage(playerZone.transform, "PlayerSprite");
-        SetRect(playerImg, new Vector2(0f, 0.35f), new Vector2(0f, 0.35f), new Vector2(40, -80), new Vector2(140, 0));
+        // --- Panel message (bande du bas) ---
+        var msgPanel = CreatePanel(canvasGO.transform, "MessagePanel", new Color(0.08f, 0.08f, 0.15f, 0.97f));
+        SetRect(msgPanel, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 0), new Vector2(0, 200));
+        var msgText = CreateTMP(msgPanel.transform, "MessageText", "Que va faire ton Wishemon ?", 36);
+        SetRectFull(msgText, 30, 20);
 
-        // --- Panel message ---
-        var msgPanel = CreatePanel(canvasGO.transform, "MessagePanel", new Color(0.1f, 0.1f, 0.1f, 0.92f));
-        SetRect(msgPanel, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 0), new Vector2(0, 120));
-        var msgText = CreateTMP(msgPanel.transform, "MessageText", "…", 18);
-        SetRectFull(msgText);
-
-        // --- Menu Action ---
-        var actionMenu = CreatePanel(canvasGO.transform, "ActionMenu", new Color(0.05f, 0.05f, 0.1f, 0.95f));
-        SetRect(actionMenu, new Vector2(0.5f, 0), new Vector2(1, 0), new Vector2(0, 0), new Vector2(0, 120));
-
-        CombatUI uiRef = null; // assigned below
-
-        CreateButton(actionMenu.transform, "BtnAttaque", "⚔ Attaque", 16, () => { });
-        CreateButton(actionMenu.transform, "BtnPotion", "🧪 Potion", 16, () => { });
-        CreateButton(actionMenu.transform, "BtnCapture", "🔵 Capture", 16, () => { });
-        CreateButton(actionMenu.transform, "BtnFuir", "💨 Fuir", 16, () => { });
-        var hLayout = actionMenu.GetComponent<HorizontalLayoutGroup>();
-        if (hLayout == null) { hLayout = actionMenu.AddComponent<HorizontalLayoutGroup>(); }
-        hLayout.spacing = 10; hLayout.padding = new RectOffset(10, 10, 10, 10);
+        // --- Menu Action (par-dessus le message, moitie droite) ---
+        var actionMenu = CreatePanel(canvasGO.transform, "ActionMenu", new Color(0.05f, 0.12f, 0.25f, 0.98f));
+        SetRect(actionMenu, new Vector2(0.5f, 0), new Vector2(1f, 0), new Vector2(0, 0), new Vector2(0, 200));
+        var hLayout = actionMenu.AddComponent<HorizontalLayoutGroup>();
+        hLayout.spacing = 8; hLayout.padding = new RectOffset(16, 16, 16, 16);
         hLayout.childForceExpandWidth = true; hLayout.childForceExpandHeight = true;
 
-        // --- Menu Attaques ---
-        var attackMenu = CreatePanel(canvasGO.transform, "AttackMenu", new Color(0.05f, 0.05f, 0.1f, 0.95f));
-        SetRect(attackMenu, new Vector2(0, 0), new Vector2(0.5f, 0), new Vector2(0, 0), new Vector2(0, 120));
+        CreateButton(actionMenu.transform, "BtnAttaque", "Attaque", 28, () => { });
+        CreateButton(actionMenu.transform, "BtnPotion", "Potion", 28, () => { });
+        CreateButton(actionMenu.transform, "BtnCapture", "Capture", 28, () => { });
+        CreateButton(actionMenu.transform, "BtnFuir", "Fuir", 28, () => { });
+
+        // --- Menu Attaques (toute la bande bas) ---
+        var attackMenu = CreatePanel(canvasGO.transform, "AttackMenu", new Color(0.05f, 0.12f, 0.25f, 0.98f));
+        SetRect(attackMenu, new Vector2(0, 0), new Vector2(1f, 0), new Vector2(0, 0), new Vector2(0, 200));
         var atkLayout = attackMenu.AddComponent<GridLayoutGroup>();
-        atkLayout.cellSize = new Vector2(180, 45); atkLayout.spacing = new Vector2(5, 5);
-        atkLayout.padding = new RectOffset(8, 8, 8, 8);
+        atkLayout.cellSize = new Vector2(420, 75); atkLayout.spacing = new Vector2(10, 10);
+        atkLayout.padding = new RectOffset(16, 16, 16, 16);
+        atkLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        atkLayout.constraintCount = 2;
 
         var atkButtons = new Button[4];
         var atkLabels = new TextMeshProUGUI[4];
         for (int i = 0; i < 4; i++)
         {
-            var btnGO = CreateButton(attackMenu.transform, $"AtkBtn{i}", $"Attaque {i + 1}", 14, () => { });
+            var btnGO = CreateButton(attackMenu.transform, $"AtkBtn{i}", $"Attaque {i + 1}", 26, () => { });
             atkButtons[i] = btnGO.GetComponent<Button>();
             atkLabels[i] = btnGO.GetComponentInChildren<TextMeshProUGUI>();
         }
-        CreateButton(attackMenu.transform, "BtnRetour", "← Retour", 14, () => { });
+        var retourGO = CreateButton(attackMenu.transform, "BtnRetour", "Retour", 24, () => { });
 
-        // --- CombatManager GameObject ---
+        // --- CombatManager ---
         var mgrGO = new GameObject("CombatManager");
         var mgr = mgrGO.AddComponent<CombatManager>();
         var ui = mgrGO.AddComponent<CombatUI>();
 
-        // Wiring via SerializedObject
         var mgrSO = new SerializedObject(mgr);
         mgrSO.FindProperty("_ui").objectReferenceValue = ui;
         mgrSO.ApplyModifiedProperties();
@@ -130,11 +137,11 @@ public static class WishmonSceneCreator
         uiSO.FindProperty("_playerName").objectReferenceValue = playerNameTxt.GetComponent<TextMeshProUGUI>();
         uiSO.FindProperty("_playerHPBar").objectReferenceValue = playerHPBar.GetComponent<Slider>();
         uiSO.FindProperty("_playerHPText").objectReferenceValue = playerHPText.GetComponent<TextMeshProUGUI>();
-        uiSO.FindProperty("_playerSprite").objectReferenceValue = playerImg.GetComponent<Image>();
         uiSO.FindProperty("_enemyName").objectReferenceValue = enemyNameTxt.GetComponent<TextMeshProUGUI>();
         uiSO.FindProperty("_enemyHPBar").objectReferenceValue = enemyHPBar.GetComponent<Slider>();
         uiSO.FindProperty("_enemyHPText").objectReferenceValue = enemyHPText.GetComponent<TextMeshProUGUI>();
-        uiSO.FindProperty("_enemySprite").objectReferenceValue = enemyImg.GetComponent<Image>();
+        uiSO.FindProperty("_playerModel").objectReferenceValue = playerModel;
+        uiSO.FindProperty("_enemyModel").objectReferenceValue = enemyModel;
         uiSO.FindProperty("_messagePanel").objectReferenceValue = msgPanel;
         uiSO.FindProperty("_messageText").objectReferenceValue = msgText.GetComponent<TextMeshProUGUI>();
         uiSO.FindProperty("_actionMenu").objectReferenceValue = actionMenu;
@@ -150,7 +157,6 @@ public static class WishmonSceneCreator
 
         uiSO.ApplyModifiedProperties();
 
-        // Wirer les boutons action
         WireButtonToCombatUI(actionMenu.transform.Find("BtnAttaque"), ui, "OnClickAttaque");
         WireButtonToCombatUI(actionMenu.transform.Find("BtnPotion"), ui, "OnClickPotion");
         WireButtonToCombatUI(actionMenu.transform.Find("BtnCapture"), ui, "OnClickCapture");
@@ -158,8 +164,8 @@ public static class WishmonSceneCreator
         WireButtonToCombatUI(attackMenu.transform.Find("BtnRetour"), ui, "OnClickRetour");
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/Combat.unity");
-        Debug.Log("[WishmonSceneCreator] Scène Combat créée dans Assets/Scenes/Combat.unity");
-        EditorUtility.DisplayDialog("Wishmon", "Scène Combat créée ✓\nPense à l'ajouter dans Build Settings !", "OK");
+        Debug.Log("[WishmonSceneCreator] Scene Combat creee : Assets/Scenes/Combat.unity");
+        EditorUtility.DisplayDialog("Wishmon", "Scene Combat creee!\nN'oublie pas Build Settings.", "OK");
     }
 
     // ==================== STARTER SELECTION ====================
@@ -176,7 +182,7 @@ public static class WishmonSceneCreator
 
         var evGO = new GameObject("EventSystem");
         evGO.AddComponent<EventSystem>();
-        evGO.AddComponent<StandaloneInputModule>();
+        evGO.AddComponent<InputSystemUIInputModule>();
 
         var canvasGO = new GameObject("Canvas");
         var canvas = canvasGO.AddComponent<Canvas>();
@@ -186,51 +192,80 @@ public static class WishmonSceneCreator
         scaler.referenceResolution = new Vector2(1920, 1080);
         canvasGO.AddComponent<GraphicRaycaster>();
 
-        // Titre
-        var title = CreateTMP(canvasGO.transform, "Title", "Choisis ton Wishemon !", 36);
-        SetRect(title, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -100), new Vector2(0, 0));
+        // Fond
+        var bg = canvasGO.AddComponent<Image>();
+        bg.color = new Color(0.07f, 0.07f, 0.18f);
 
-        // Info
-        var info = CreateTMP(canvasGO.transform, "Info", "Passe la souris sur un wishemon pour voir ses stats", 18);
-        SetRect(info, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -160), new Vector2(0, -110));
+        // Titre
+        var title = CreateTMP(canvasGO.transform, "Title", "Choisis ton Wishemon !", 60);
+        SetRect(title, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -130), new Vector2(0, -10));
+
+        // Sous-titre
+        var info = CreateTMP(canvasGO.transform, "Info", "Clique sur un wishemon pour commencer l'aventure", 30);
+        SetRect(info, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -210), new Vector2(0, -140));
 
         // Conteneur 3 starters
         var container = new GameObject("StarterContainer");
         container.transform.SetParent(canvasGO.transform, false);
         var rt = container.AddComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0.1f, 0.25f);
-        rt.anchorMax = new Vector2(0.9f, 0.8f);
+        rt.anchorMin = new Vector2(0.05f, 0.15f);
+        rt.anchorMax = new Vector2(0.95f, 0.85f);
         rt.offsetMin = rt.offsetMax = Vector2.zero;
         var layout = container.AddComponent<HorizontalLayoutGroup>();
-        layout.spacing = 30; layout.childAlignment = TextAnchor.MiddleCenter;
+        layout.spacing = 40; layout.childAlignment = TextAnchor.MiddleCenter;
         layout.childForceExpandWidth = true; layout.childForceExpandHeight = true;
+        layout.padding = new RectOffset(20, 20, 0, 0);
 
         var buttons = new Button[3];
         var sprites = new Image[3];
         var names = new TextMeshProUGUI[3];
 
+        Color[] cardColors = new Color[]
+        {
+            new Color(0.1f, 0.15f, 0.35f),
+            new Color(0.1f, 0.25f, 0.15f),
+            new Color(0.3f, 0.12f, 0.12f),
+        };
+
         for (int i = 0; i < 3; i++)
         {
-            var card = CreatePanel(container.transform, $"Starter{i}", new Color(0.15f, 0.15f, 0.25f));
+            var card = CreatePanel(container.transform, $"Starter{i}", cardColors[i]);
+            var outline = card.AddComponent<Outline>();
+            outline.effectColor = new Color(0.4f, 0.6f, 1f);
+            outline.effectDistance = new Vector2(3, 3);
             card.AddComponent<LayoutElement>();
             var vl = card.AddComponent<VerticalLayoutGroup>();
             vl.childAlignment = TextAnchor.MiddleCenter;
-            vl.spacing = 8; vl.padding = new RectOffset(10, 10, 10, 10);
+            vl.spacing = 20; vl.padding = new RectOffset(20, 20, 30, 30);
             vl.childForceExpandWidth = true; vl.childForceExpandHeight = false;
 
             var imgGO = new GameObject("Sprite");
             imgGO.transform.SetParent(card.transform, false);
             var imgRT = imgGO.AddComponent<RectTransform>();
-            imgRT.sizeDelta = new Vector2(120, 120);
+            imgRT.sizeDelta = new Vector2(160, 160);
+            var le = imgGO.AddComponent<LayoutElement>();
+            le.preferredHeight = 160; le.preferredWidth = 160; le.flexibleWidth = 0;
             sprites[i] = imgGO.AddComponent<Image>();
-            sprites[i].color = new Color(0.5f + i * 0.2f, 0.3f, 0.7f - i * 0.2f);
+            sprites[i].color = new Color(0.5f + i * 0.15f, 0.4f - i * 0.1f, 0.8f - i * 0.25f, 0.6f);
 
-            var nameGO = CreateTMP(card.transform, $"Name{i}", $"Starter {i + 1}", 20);
-            names[i] = nameGO.GetComponent<TextMeshProUGUI>();
+            var nameGO = CreateTMP(card.transform, $"Name{i}", $"Starter {i + 1}", 36);
+            var nameTMP = nameGO.GetComponent<TextMeshProUGUI>();
+            nameTMP.fontStyle = FontStyles.Bold;
+            names[i] = nameTMP;
+            var namLE = nameGO.AddComponent<LayoutElement>();
+            namLE.preferredHeight = 50;
 
-            var btnGO = CreateButton(card.transform, $"Btn{i}", "Choisir", 18, () => { });
+            var btnGO = CreateButton(card.transform, $"Btn{i}", "Choisir !", 32, () => { });
+            var btnLE = btnGO.AddComponent<LayoutElement>();
+            btnLE.preferredHeight = 75; btnLE.minHeight = 75;
             buttons[i] = btnGO.GetComponent<Button>();
         }
+
+        // Info panel en bas
+        var infoPanel = CreatePanel(canvasGO.transform, "InfoPanel", new Color(0, 0, 0, 0.5f));
+        SetRect(infoPanel, new Vector2(0.1f, 0), new Vector2(0.9f, 0), new Vector2(0, 10), new Vector2(0, 120));
+        var infoTxt = CreateTMP(infoPanel.transform, "InfoText", "", 28);
+        SetRectFull(infoTxt, 15, 10);
 
         // Manager
         var mgrGO = new GameObject("StarterSelectionManager");
@@ -247,12 +282,12 @@ public static class WishmonSceneCreator
         var nameProp = so.FindProperty("_names");
         nameProp.arraySize = 3;
         for (int i = 0; i < 3; i++) nameProp.GetArrayElementAtIndex(i).objectReferenceValue = names[i];
-        so.FindProperty("_infoText").objectReferenceValue = info.GetComponent<TextMeshProUGUI>();
+        so.FindProperty("_infoText").objectReferenceValue = infoTxt.GetComponent<TextMeshProUGUI>();
         so.ApplyModifiedProperties();
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/StarterSelection.unity");
-        Debug.Log("[WishmonSceneCreator] Scène StarterSelection créée !");
-        EditorUtility.DisplayDialog("Wishmon", "Scène StarterSelection créée ✓\nPense à l'ajouter dans Build Settings !", "OK");
+        Debug.Log("[WishmonSceneCreator] Scene StarterSelection creee !");
+        EditorUtility.DisplayDialog("Wishmon", "Scene StarterSelection creee!\nN'oublie pas Build Settings.", "OK");
     }
 
     [MenuItem("Wishmon/3. Ajouter toutes les scènes au Build")]
@@ -271,8 +306,8 @@ public static class WishmonSceneCreator
             list.Add(new EditorBuildSettingsScene(path, true));
 
         EditorBuildSettings.scenes = list.ToArray();
-        Debug.Log("[WishmonSceneCreator] Build Settings mis à jour !");
-        EditorUtility.DisplayDialog("Wishmon", "Build Settings mis à jour ✓\n" + string.Join("\n", scenes), "OK");
+        Debug.Log("[WishmonSceneCreator] Build Settings mis a jour !");
+        EditorUtility.DisplayDialog("Wishmon", "Build Settings mis a jour !\n" + string.Join("\n", scenes), "OK");
     }
 
     // ==================== HELPERS ====================
@@ -301,16 +336,6 @@ public static class WishmonSceneCreator
         return go;
     }
 
-    private static GameObject CreateImage(Transform parent, string name)
-    {
-        var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
-        go.AddComponent<RectTransform>();
-        var img = go.AddComponent<Image>();
-        img.color = new Color(0.6f, 0.6f, 0.8f, 0.5f);
-        return go;
-    }
-
     private static GameObject CreateSlider(Transform parent, string name)
     {
         var go = new GameObject(name);
@@ -323,15 +348,14 @@ public static class WishmonSceneCreator
         var bgRT = bg.AddComponent<RectTransform>(); bgRT.anchorMin = Vector2.zero; bgRT.anchorMax = Vector2.one; bgRT.offsetMin = bgRT.offsetMax = Vector2.zero;
         var bgImg = bg.AddComponent<Image>(); bgImg.color = new Color(0.3f, 0.1f, 0.1f);
 
-        var fill = new GameObject("Fill"); fill.transform.SetParent(go.transform, false);
-        var fillRT = fill.AddComponent<RectTransform>(); fillRT.anchorMin = Vector2.zero; fillRT.anchorMax = Vector2.one; fillRT.offsetMin = fillRT.offsetMax = Vector2.zero;
-        var fillImg = fill.AddComponent<Image>(); fillImg.color = new Color(0.2f, 0.8f, 0.2f);
-
         var fillArea = new GameObject("Fill Area"); fillArea.transform.SetParent(go.transform, false);
         var faRT = fillArea.AddComponent<RectTransform>(); faRT.anchorMin = Vector2.zero; faRT.anchorMax = Vector2.one; faRT.offsetMin = faRT.offsetMax = Vector2.zero;
-        fill.transform.SetParent(fillArea.transform, false);
-        slider.fillRect = fillRT;
 
+        var fill = new GameObject("Fill"); fill.transform.SetParent(fillArea.transform, false);
+        var fillRT = fill.AddComponent<RectTransform>(); fillRT.anchorMin = Vector2.zero; fillRT.anchorMax = Vector2.one; fillRT.offsetMin = fillRT.offsetMax = Vector2.zero;
+        var fillImg = fill.AddComponent<Image>(); fillImg.color = new Color(0.2f, 0.85f, 0.2f);
+
+        slider.fillRect = fillRT;
         return go;
     }
 
@@ -342,10 +366,11 @@ public static class WishmonSceneCreator
         go.transform.SetParent(parent, false);
         go.AddComponent<RectTransform>();
         var img = go.AddComponent<Image>();
-        img.color = new Color(0.2f, 0.4f, 0.7f);
+        img.color = new Color(0.18f, 0.38f, 0.72f);
         var btn = go.AddComponent<Button>();
         var colors = btn.colors;
-        colors.highlightedColor = new Color(0.3f, 0.5f, 0.9f);
+        colors.highlightedColor = new Color(0.28f, 0.52f, 0.95f);
+        colors.pressedColor = new Color(0.1f, 0.25f, 0.55f);
         btn.colors = colors;
         if (onClick != null) btn.onClick.AddListener(onClick);
 
@@ -353,10 +378,11 @@ public static class WishmonSceneCreator
         lblGO.transform.SetParent(go.transform, false);
         var lblRT = lblGO.AddComponent<RectTransform>();
         lblRT.anchorMin = Vector2.zero; lblRT.anchorMax = Vector2.one;
-        lblRT.offsetMin = lblRT.offsetMax = Vector2.zero;
+        lblRT.offsetMin = new Vector2(8, 4); lblRT.offsetMax = new Vector2(-8, -4);
         var tmp = lblGO.AddComponent<TextMeshProUGUI>();
         tmp.text = label; tmp.fontSize = size;
         tmp.alignment = TextAlignmentOptions.Center; tmp.color = Color.white;
+        tmp.fontStyle = FontStyles.Bold;
 
         return go;
     }
@@ -374,11 +400,12 @@ public static class WishmonSceneCreator
                 typeof(CombatUI).GetMethod(methodName)));
     }
 
-    private static void SetRectFull(GameObject go)
+    private static void SetRectFull(GameObject go, float paddingH = 0, float paddingV = 0)
     {
         var rt = go.GetComponent<RectTransform>();
         rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
-        rt.offsetMin = rt.offsetMax = Vector2.zero;
+        rt.offsetMin = new Vector2(paddingH, paddingV);
+        rt.offsetMax = new Vector2(-paddingH, -paddingV);
     }
 
     private static void SetRect(GameObject go, Vector2 anchorMin, Vector2 anchorMax,
@@ -390,7 +417,7 @@ public static class WishmonSceneCreator
     }
 }
 
-// Petit helper pour s'assurer que PlayerTeam existe dans StarterSelection
+// Helper pour s'assurer que PlayerTeam existe dans StarterSelection
 public class PlayerTeamBootstrap : MonoBehaviour
 {
     [SerializeField] private GameObject _playerTeamPrefab;
