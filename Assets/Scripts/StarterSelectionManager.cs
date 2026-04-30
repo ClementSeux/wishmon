@@ -6,9 +6,10 @@ using UnityEngine.UI;
 public class StarterSelectionManager : MonoBehaviour
 {
     [SerializeField] private Button[] _buttons = new Button[3];
-    [SerializeField] private Image[] _sprites = new Image[3];
+    [SerializeField] private Image[] _sprites = new Image[3];       // gardé pour compatibilité
     [SerializeField] private TextMeshProUGUI[] _names = new TextMeshProUGUI[3];
     [SerializeField] private TextMeshProUGUI _infoText;
+    [SerializeField] private WishemonModelViewer[] _viewers = new WishemonModelViewer[3];
 
     private void Start()
     {
@@ -22,14 +23,19 @@ public class StarterSelectionManager : MonoBehaviour
 
             if (card == null) { _buttons[i].gameObject.SetActive(false); continue; }
 
-            if (card.Sprite != null) _sprites[i].sprite = card.Sprite;
+            // Modèle 3D via RenderTexture
+            if (i < _viewers.Length && _viewers[i] != null)
+                _viewers[i].Init(card);
+            else if (i < _sprites.Length && _sprites[i] != null && card.Sprite != null)
+                _sprites[i].sprite = card.Sprite;
+
             _names[i].text = card.Name;
             _buttons[i].onClick.AddListener(() => Choose(idx));
-            int captured = i; // for hover info
+
             var trigger = _buttons[i].gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
             var entry = new UnityEngine.EventSystems.EventTrigger.Entry
                 { eventID = UnityEngine.EventSystems.EventTriggerType.PointerEnter };
-            entry.callback.AddListener(_ => ShowInfo(team.StarterChoices[captured]));
+            entry.callback.AddListener(_ => ShowInfo(team.StarterChoices[idx]));
             trigger.triggers.Add(entry);
         }
     }
