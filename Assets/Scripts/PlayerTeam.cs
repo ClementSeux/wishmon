@@ -9,6 +9,36 @@ public class PlayerTeam : MonoBehaviour
     [Header("Starters disponibles (3)")]
     [SerializeField] private WishemonCard[] _starterChoices = new WishemonCard[3];
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void AutoCreate()
+    {
+        if (_instance != null) return;
+        var go = new GameObject("PlayerTeam [auto]");
+        var pt = go.AddComponent<PlayerTeam>();
+        // Starters chargés depuis la DB après le chargement de scène
+        DontDestroyOnLoad(go);
+        // Charge les starters depuis WishemonDatabase (dispo après BeforeSceneLoad)
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += pt.OnFirstSceneLoaded;
+    }
+
+    private void OnFirstSceneLoaded(UnityEngine.SceneManagement.Scene scene,
+        UnityEngine.SceneManagement.LoadSceneMode mode)
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnFirstSceneLoaded;
+        if (_starterChoices == null || _starterChoices.Length == 0 ||
+            System.Array.TrueForAll(_starterChoices, c => c == null))
+        {
+            var db = WishemonDatabase.Instance;
+            if (db != null && db.All.Length > 0)
+            {
+                int count = Mathf.Min(3, db.All.Length);
+                _starterChoices = new WishemonCard[count];
+                for (int i = 0; i < count; i++)
+                    _starterChoices[i] = db.All[i];
+            }
+        }
+    }
+
     public List<WishemonInstance> Team { get; } = new List<WishemonInstance>();
     public List<string> CaughtWishemon { get; } = new List<string>();
     public WishemonCard[] StarterChoices => _starterChoices;
